@@ -12,24 +12,26 @@
 
 #define MAX_NAME 100
 
-typedef struct Date {
+typedef struct _Date_ {
     int year;
     int month;
     int day;
 } Date;
 
-typedef struct Student {
+typedef struct _Student_ {
    // фамилия, имя, отчество, дата рождения, средняя успеваемость
     char familiya[MAX_NAME];
     char imya[MAX_NAME];
     char otchestvo[MAX_NAME];
     double uspevaemost;
-    struct Date birth_date;
+    Date birth_date;
     
-    struct Student* next;
+    struct _Student_* next;
 } Student;
 
-void fill_student(struct Student* student){
+char in_buffer[256];
+
+void fill_student(Student* student){
     if(student == NULL){
         printf("Error: zero pointer");
         return;
@@ -43,7 +45,7 @@ void fill_student(struct Student* student){
     student->uspevaemost = 50.5;
 }
 
-void print_student(struct Student* student){
+void print_student(Student* student){
     if(student == NULL){
         printf("Error: zero pointer\n");
         return;
@@ -51,12 +53,12 @@ void print_student(struct Student* student){
     printf("%s %s %s %02d.%02d.%d. Mark: %2.2f\n", student->familiya, student->imya, student->otchestvo, student->birth_date.day, student->birth_date.month, student->birth_date.year, student->uspevaemost);
 }
 
-void print_group(struct Student* list){
+void print_group(Student* list){
     if(list == NULL){
         printf("Empty list\n");
         return;
     }
-    struct Student* next = list;
+    Student* next = list;
     int number = 1;
     while (next != NULL) {
         printf("%d: ", number++);
@@ -66,7 +68,7 @@ void print_group(struct Student* list){
     printf("========================================\n");
 }
 
-void add_student(struct Student** list, struct Student* newStudent){
+void add_student(Student** list, Student* newStudent){
     if(list == NULL){
         printf("Error: zero list");
         return;
@@ -76,7 +78,7 @@ void add_student(struct Student** list, struct Student* newStudent){
         return;
     }
 
-    struct Student** next = list;
+    Student** next = list;
     while (1) {
         if (*next == NULL) {
             *next = newStudent;
@@ -86,13 +88,13 @@ void add_student(struct Student** list, struct Student* newStudent){
     }
 }
 
-void remove_student(struct Student** list, int index){
+void remove_student(Student** list, int index){
     if(list == NULL){
         printf("Error: zero list");
         return;
     }
 
-    struct Student** next = list;
+    Student** next = list;
     int i = 1;
     while (1) {
         if (*next == NULL) {
@@ -100,7 +102,7 @@ void remove_student(struct Student** list, int index){
             break;
         }
         if (i == index) {
-            struct Student* tmp = *next;
+            Student* tmp = *next;
             *next = (*next)->next;
             free(tmp);
             break;
@@ -110,12 +112,12 @@ void remove_student(struct Student** list, int index){
     }
 }
 
-void search_name(struct Student* root, char* name){
+void search_name(Student* root, char* name){
     if(name == NULL){
         printf("Error: noname");
         return;
     }
-    struct Student* next = root;
+    Student* next = root;
     int i = 1;
     int count = 0;
     while (next != NULL) {
@@ -130,7 +132,7 @@ void search_name(struct Student* root, char* name){
     printf("%d found\n---------------------------------\n", count);
 }
 
-void search_marks(struct Student* root, int mark_min, int mark_max){
+void search_marks(Student* root, int mark_min, int mark_max){
     if(mark_min > mark_max){
         printf("Error");
         return;
@@ -143,7 +145,7 @@ void search_marks(struct Student* root, int mark_min, int mark_max){
         printf("Error: incorrect mark %d \n", mark_max);
         return;
     }
-    struct Student* next = root;
+    Student* next = root;
     int i = 1;
     int count = 0;
     while (next != NULL) {
@@ -158,8 +160,8 @@ void search_marks(struct Student* root, int mark_min, int mark_max){
     printf("%d found\n---------------------------------\n", count);
 }
 
-void search_date(struct Student* root, int day, int month){
-    struct Student* next = root;
+void search_date(Student* root, int day, int month){
+    Student* next = root;
     int i = 1;
     int count = 0;
     while (next != NULL) {
@@ -174,85 +176,141 @@ void search_date(struct Student* root, int day, int month){
     printf("%d found\n---------------------------------\n", count);
 }
 
-void search_student(struct Student* root){
-    int s = 0;
-    do{
-        printf("Enter sort type:\n1. Name\n2. Marks\n3. Birth date\n4. Cancel\n");
+void search_student(Student* root){
+    int finish = 0;
+    do {
         char name[MAX_NAME] = {0};
         int mark_max = 0;
         int mark_min = 0;
         int day = 0;
         int month = 0;
         int cc = 0;
-        int entered = scanf("%d", &cc);
-        if (entered < 1) {
-            continue;
+        
+        int in_success = 0;
+        while (!in_success) {
+            printf("\nEnter sort type:\n1. Name\n2. Marks\n3. Birth date\n4. Cancel\n");
+            char * rr = fgets(in_buffer, sizeof(in_buffer), stdin);
+            if (rr != NULL) {
+                int scanned = sscanf(in_buffer, "%d", &cc);
+                if (scanned == 1) {
+                    in_success = 1;
+                    break;
+                } else {
+                    printf("Expected 1 argument, got %d\n", scanned);
+                }
+            }
         }
-        while ((getchar()) != '\n');
 
         switch (cc) {
             case 1:
-                printf("Enter student first name\n");
-                scanf("%s", name);
-                while ((getchar()) != '\n');
-                printf("=========== NAME:%s\n", name);
+                in_success = 0;
+                while (!in_success) {
+                    printf("Enter student first name\n");
+                    char * rr = fgets(in_buffer, sizeof(in_buffer), stdin);
+                    if (rr != NULL) {
+                        int scanned = sscanf(in_buffer, "%s", name);
+                        if (scanned != 1) {
+                            printf("Error: 1 argument expected, got %d\n", scanned);
+                        } else {
+                            in_success = 1;
+                            break;
+                        }
+                    }
+                }
+                printf("=========== search name: %s\n", name);
                 search_name(root, name);
                 break;
+                
             case 2: {
-                int cc2 = EOF;
-                while (cc2 == EOF) {
-                    printf("Enter student marks\n");
-                    cc2 = scanf("%d %d", &mark_min, &mark_max);
+                in_success = 0;
+                while (!in_success) {
+                    printf("Enter student marks 'min max':\n");
+                    char * rr = fgets(in_buffer, sizeof(in_buffer), stdin);
+                    if (rr != NULL) {
+                        int scanned = sscanf(in_buffer, "%d %d", &mark_min, &mark_max);
+                        if (scanned != 2) {
+                            printf("Error: 2 arguments expected, got %d\n", scanned);
+                        } else {
+                            in_success = 1;
+                            break;
+                        }
+                    }
                 }
-                while ((getchar()) != '\n');
-//                if (cc2 == 2) {
-//                    break;
-//                }
-                printf("=========== marks [%d:%d]\n", mark_min, mark_max);
+                printf("=========== search marks [%d:%d]\n", mark_min, mark_max);
                 search_marks(root, mark_min, mark_max);
             } break;
+                
             case 3: {
-                int cc2 = EOF;
-                while (cc2 == EOF) {
-                    printf("Enter birth day\n");
-                    scanf("%d.%d", &day, &month);
+                in_success = 0;
+                while (!in_success) {
+                    printf("Enter birth day 'DD.MM'\n");
+                    char * rr = fgets(in_buffer, sizeof(in_buffer), stdin);
+                    if (rr != NULL) {
+                        int scanned = sscanf(in_buffer, "%d.%d", &day, &month);
+                        if (scanned != 2) {
+                            printf("Error: 2 arguments expected, got %d\n", scanned);
+                        } else {
+                            in_success = 1;
+                            break;
+                        }
+                    }
                 }
-                while ((getchar()) != '\n');
-                printf("=========== bday: %d.%d\n", day, month);
+                printf("=========== search bday: %d.%d\n", day, month);
                 search_date(root, day, month);
             } break;
+                
             case 4:
-                s = 1;
+                finish = 1;
                 break;
         }
-    }while (!s);
+    } while (!finish);
 }
 
 int main(int argc, const char * argv[]) {
     int stop = 0;
-    struct Student* root = NULL;
+    Student* root = NULL;
     do{
-        printf("1. Add new student\n2. Print all group\n3. Search\n4. Delete student by number\n5. Exit\n");
         int mode = 0;
         char familiya[MAX_NAME];
         char imya[MAX_NAME];
         char otchestvo[MAX_NAME];
-        double uspevaemost;
+        double uspevaemost = 0.0;
         int index = 0;
         int permition = 0;
-        struct Date date;
-        scanf("%d", &mode);
-        while ((getchar()) != '\n');
+        int in_success = 0;
+        Date date = {0};
+        
+        while (!in_success) {
+            printf("1. Add new student\n2. Print all group\n3. Search\n4. Delete student by number\n5. Exit\n");
+            char * rr = fgets(in_buffer, sizeof(in_buffer), stdin);
+            if (rr != NULL) {
+                int scanned = sscanf(in_buffer, "%d", &mode);
+                if (scanned == 1) {
+                    in_success = 1;
+                    break;
+                } else {
+                    printf("Error: 1 int argument expected, got %d\n", scanned);
+                }
+            }
+        }
+        
         switch (mode) {
-            case 0:
-                stop = 1;
-                break;
             case 1:
-                printf("Enter student data\n");
-                struct Student * student;
-                student = malloc(sizeof(struct Student));
-                scanf("%s %s %s %d.%d.%d %lf", familiya, imya, otchestvo, &date.day, &date.month, &date.year, &uspevaemost);
-                while ((getchar()) != '\n');
+                in_success = 0;
+                while (!in_success) {
+                    printf("Enter student data: 'f.name l.name s.name DD.MM.YYYY mark':\n");
+                    char *rr = fgets(in_buffer, sizeof(in_buffer), stdin);
+                    if (rr != NULL) {
+                        int in_count = sscanf(in_buffer, "%s %s %s %d.%d.%d %lf", familiya, imya, otchestvo, &date.day, &date.month, &date.year, &uspevaemost);
+                        if (in_count == 7) {
+                            in_success = 1;
+                            break;
+                        } else {
+                            printf("Error: 7 arguments expected (got %d)\n", in_count);
+                        }
+                    }
+                }
+                Student * student = malloc(sizeof(Student));
                 strcpy(student->familiya, familiya);
                 strcpy(student->imya, imya);
                 strcpy(student->otchestvo, otchestvo);
@@ -261,18 +319,34 @@ int main(int argc, const char * argv[]) {
                 student->next = NULL;
                 add_student(&root, student);
                 break;
+                
             case 2:
                 print_group(root);
                 break;
+                
             case 3:
                 search_student(root);
                 break;
+                
             case 4:
-                printf("Enter student number:\n");
-                scanf("%d", &index);
-                while ((getchar()) != '\n');
+                in_success = 0;
+                while (!in_success) {
+                    printf("Enter student number:\n");
+                    char *rr = fgets(in_buffer, sizeof(in_buffer), stdin);
+                    if (rr != NULL) {
+                        int in_count = sscanf(in_buffer, "%d", &index);
+                        if (in_count == 1) {
+                            in_success = 1;
+                            break;
+                        } else {
+                            printf("Error: 1 arguments expected (got %d)\n", in_count);
+                        }
+                    }
+                }
                 remove_student(&root, index);
                 break;
+                
+            case 0:
             case 5:
                 printf("Are you shure about this? (666 - yes)\n");
                 scanf("%d", &permition);
@@ -282,7 +356,7 @@ int main(int argc, const char * argv[]) {
                 }
                 break;
         }
-    }while(!stop);
+    } while(!stop);
 
     return 0;
 }
