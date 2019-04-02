@@ -1,0 +1,6 @@
+# depslib dependency file v1.0
+1541343044 source:/home/zx/Projects/Mitya/lesson04/main.cpp
+	<iostream>
+	<stdio.h>
+	<bits/stdc++.h>
+
