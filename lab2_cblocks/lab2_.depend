@@ -1,0 +1,6 @@
+# depslib dependency file v1.0
+1554228506 source:/home/zx/Projects/Mitya/lab2_/main.c
+	<stdio.h>
+	<string.h>
+	<stdlib.h>
+
