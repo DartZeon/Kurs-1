@@ -1,0 +1,6 @@
+# depslib dependency file v1.0
+1554325182 source:/home/zx/Projects/Mitya/Kurs-1/idz_cblocks/main.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+

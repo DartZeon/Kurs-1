@@ -13,15 +13,15 @@ enum Type {
     Type_COUNT
 };
 
-struct Medals {
+typedef struct _Medals_ {
     char *country_name[COUNT];
     int *table[COUNT];
 } Medals;
 
+char in_buffer[256];
 
-
-struct Medals* create_medals(){
-    struct Medals* medals = malloc(sizeof(Medals));
+ Medals* create_medals(){
+    Medals* medals = malloc(sizeof(Medals));
     for(int i = 0; i < COUNT; i++){
         medals->country_name[i] = malloc(MAX_STRING);
         medals->table[i] = malloc(sizeof(int)*Type_COUNT);
@@ -29,7 +29,7 @@ struct Medals* create_medals(){
     return medals;
 }
 
-void del_medals(struct Medals* medals){
+void del_medals(Medals* medals){
     if(medals == NULL){
         printf("Error: zero medals");
         return;
@@ -42,7 +42,7 @@ void del_medals(struct Medals* medals){
 }
 
 
-void print_country(struct Medals* medals, char *name){
+void print_country(Medals* medals, char *name){
     if(medals == NULL){
         printf("Error: zero medals");
         return;
@@ -69,7 +69,7 @@ void print_country(struct Medals* medals, char *name){
     }
 }
 
-void print_medals(struct Medals* medals){
+void print_medals(Medals* medals){
     if(medals == NULL){
         printf("Error: zero medals");
         return;
@@ -90,25 +90,25 @@ void print_medals(struct Medals* medals){
     }
 }
 
-void fill_struct(struct Medals* medals){
+void fill_struct(Medals* medals){
     char *name = "Germany";
     strcpy(medals->country_name[2], name);
     medals->table[0][Gold] = 5;
     medals->table[0][Silver] = 6;
     medals->table[0][Bronze] = 2;
-    
+
     name = "Canada";
     strcpy(medals->country_name[0], name);
     medals->table[1][Gold] = 5;
     medals->table[1][Silver] = 8;
     medals->table[1][Bronze] = 10;
-    
+
     name = "France";
     strcpy(medals->country_name[1], name);
     medals->table[2][Gold] = 5;
     medals->table[2][Silver] = 8;
     medals->table[2][Bronze] = 4;
-    
+
     name = "Australia";
     strcpy(medals->country_name[3], name);
     medals->table[3][Gold] = 8;
@@ -116,7 +116,7 @@ void fill_struct(struct Medals* medals){
     medals->table[3][Bronze] = 6;
 }
 
-void insert_data(struct Medals* medals, char *country, int *number){
+void insert_data(Medals* medals, char *country, int *number){
     if(medals == NULL){
         printf("Zero medals\n");
         return;
@@ -148,7 +148,7 @@ void insert_data(struct Medals* medals, char *country, int *number){
     printf("No more place\n");
 }
 
-void sort_medals_byname(struct Medals* medals){
+void sort_medals_byname(Medals* medals){
     if(medals == NULL){
         printf("Zero medals\n");
         return;
@@ -171,7 +171,7 @@ void sort_medals_byname(struct Medals* medals){
     }while(didSwap);
 }
 
-void sort_medals_bytype(struct Medals* medals){
+void sort_medals_bytype(Medals* medals){
     if(medals == NULL){
         printf("Zero medals\n");
         return;
@@ -199,44 +199,86 @@ void sort_medals_bytype(struct Medals* medals){
 }
 
 int main(int argc, const char * argv[]) {
-    struct Medals*data = create_medals();
+    Medals*data = create_medals();
     fill_struct(data);
     print_medals(data);
-    
+
     int stop = 0;
     do{
-        printf("\n1 - change data\n2 - print country\n3 - print table\n4 - exit\n");
         int mode = 0;
         int number[Type_COUNT] = {0};
         char name[MAX_STRING] = {0};
-        scanf("%d", &mode);
+        int in_success = 0;
+        while (!in_success) {
+            printf("\n1 - change data\n2 - print country\n3 - print table\n4 - exit\n");
+            char * rr = fgets(in_buffer, sizeof(in_buffer), stdin);
+            if (rr != NULL) {
+                int scanned = sscanf(in_buffer, "%d", &mode);
+                if (scanned == 1) {
+                    in_success = 1;
+                    break;
+                } else {
+                    printf("Expected 1 argument, got %d\n", scanned);
+                }
+            }
+        }
+
         switch (mode) {
             case 0:
                 stop = 1;
                 break;
-            case 1:
-                printf("Country, gold, silver, bronze\n");
-                scanf("%s %d %d %d", name, &number[Gold], &number[Silver], &number[Bronze]);
+
+            case 1: {
+                int in_success = 0;
+                while (!in_success) {
+                    printf("Country, gold, silver, bronze\n");
+                    char * rr = fgets(in_buffer, sizeof(in_buffer), stdin);
+                    if (rr != NULL) {
+                        int scanned = sscanf(in_buffer, "%s %d %d %d", name, &number[Gold], &number[Silver], &number[Bronze]);
+                        if (scanned == 4) {
+                            in_success = 1;
+                            break;
+                        } else {
+                            printf("Expected 4 arguments, got %d\n", scanned);
+                        }
+                    }
+                }
                 insert_data(data, name, number);
                 sort_medals_byname(data);
-                break;
-            case 2:
-                printf("Country\n");
-                scanf("%s", name);
+            } break;
+
+            case 2: {
+                int in_success = 0;
+                while (!in_success) {
+                    printf("Country\n");
+                    char * rr = fgets(in_buffer, sizeof(in_buffer), stdin);
+                    if (rr != NULL) {
+                        int scanned = sscanf(in_buffer, "%s", name);
+                        if (scanned == 1) {
+                            in_success = 1;
+                            break;
+                        } else {
+                            printf("Expected 1 argument, got %d\n", scanned);
+                        }
+                    }
+                }
                 print_country(data, name);
-                break;
+            } break;
+
             case 3:
                 printf("Country table\n");
                 sort_medals_bytype(data);
                 print_medals(data);
                 break;
+
             case 4:
                 stop = 1;
                 break;
-                
+
             default:
                 break;
         }
-    }while(!stop);
+    } while(!stop);
+
     return 0;
 }
