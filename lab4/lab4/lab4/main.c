@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #define MAX_NAME 100
 
@@ -81,6 +83,7 @@ size_t write_student(FILE* file, Student* student){
         printf("Error: cant write file\n");
         return -1;
     }
+    fflush(file);
     
     return byteSize;
 }
@@ -182,7 +185,7 @@ void print_group(Student* list){
     printf("========================================\n");
 }
 
-void add_student(Student** list, Student* newStudent){
+void add_student(Student** list, Student* newStudent, InsertMode insertmode){
     if(list == NULL){
         printf("Error: zero list");
         return;
@@ -191,15 +194,52 @@ void add_student(Student** list, Student* newStudent){
         printf("Error: zero student");
         return;
     }
-    
-    Student** next = list;
-    while (1) {
-        if (*next == NULL) {
-            *next = newStudent;
-            break;
-        }
-        next = &((*next)->next);
+    if(insertmode == InsertModeHead){
+        newStudent->next = *list;
+        *list = newStudent;
     }
+    else{
+        Student** next = list;
+        while (1) {
+            if (*next == NULL) {
+                *next = newStudent;
+                break;
+            }
+            next = &((*next)->next);
+        }
+    }
+}
+
+void sort_student(Student** list){
+    //return;
+    
+    if(list == NULL){
+        printf("Error: zero list");
+        return;
+    }
+    int didSwap = 0;
+    do{
+        Student** s0 = list;
+        didSwap = 0;
+        while (s0 != NULL) {
+            if((*s0)->next == NULL){
+                break;
+            }
+            Student* s1 = (*s0)->next;
+            int compare = strcmp((*s0)->familiya, s1->familiya);
+            if(compare > 0){
+                didSwap = 1;
+                Student* tmps2 = s1->next;
+                s1->next = *s0;
+                (*s0)->next = tmps2;
+                *s0 = s1;
+            }
+            s0 = &((*s0)->next);
+        }
+        
+        
+        
+    }while(didSwap != 0);
 }
 
 void remove_student(Student** list, int index){
@@ -483,58 +523,26 @@ int main(int argc, const char * argv[]) {
         exit(-1);
     }
     const char* filename = argv[1];
-    //    FILE *file = fopen(filename, "w");
-    //    if(file == NULL){
-    //        printf("Error: cant open file %s\n", filename);
-    //        exit(-1);
-    //    }
-    //    Student* testStudent = malloc(sizeof(Student));
-    //    fill_student(testStudent);
-    //    print_student(testStudent);
-    //    size_t byte = write_student(file, testStudent);
-    //    printf("Written %d byte\n",(int)byte);
-    //    int x = fclose(file);
-    //    if(x != 0){
-    //        printf("Error: cant close file");
-    //    }
-    //
-    //    file = fopen(filename, "r");
-    //    if(file == NULL){
-    //        printf("Error: cant open file %s\n", filename);
-    //        exit(-1);
-    //    }
-    //    Student* student = read_student(file);
-    //    if(student == NULL){
-    //        printf("Error: no students\n");
-    //    }
-    //    else{
-    //        print_student(student);
-    //        free(student);
-    //    }
-    //    x = fclose(file);
-    //    if(x != 0){
-    //        printf("Error: cant close file");
-    //    }
-    
-    
-    
     FILE *file = fopen(filename, "r");
     if(file == NULL){
-        printf("Error: cant open file %s\n", filename);
-        exit(-1);
+        printf("Warning: no file %s\n", filename);
+    }
+    else{
+        Student** lastStudent = &root;
+        do{
+            Student* student = read_student(file);
+            if(student == NULL){
+                break;
+            }
+            *lastStudent = student;
+            lastStudent = &student->next;
+        }while(1);
+        
+        fclose(file);
     }
     
-    Student** lastStudent = &root;
-    do{
-        Student* student = read_student(file);
-        if(student == NULL){
-            break;
-        }
-        *lastStudent = student;
-        lastStudent = &student->next;
-    }while(1);
     
-    fclose(file);
+    
     file = fopen(filename, "a+");
     if(file == NULL){
         printf("Error: cant open file %s\n", filename);
@@ -602,6 +610,11 @@ int main(int argc, const char * argv[]) {
                     printf("Enter student data: 'f.name l.name s.name DD.MM.YYYY mark':\n");
                     char *rr = fgets(in_buffer, sizeof(in_buffer), stdin);
                     if (rr != NULL) {
+                        memset(familiya, 0, MAX_NAME);
+                        memset(imya, 0, MAX_NAME);
+                        memset(otchestvo, 0, MAX_NAME);
+                        memset(&date, 0, sizeof(Date));
+                        uspevaemost = 0.0;
                         int in_count = sscanf(in_buffer, "%s %s %s %d.%d.%d %lf", familiya, imya, otchestvo, &date.day, &date.month, &date.year, &uspevaemost);
                         if (in_count == 7) {
                             in_success = 1;
@@ -618,7 +631,8 @@ int main(int argc, const char * argv[]) {
                 student->birth_date = date;
                 student->uspevaemost = uspevaemost;
                 student->next = NULL;
-                add_student(&root, student);
+                add_student(&root, student, insertmode);
+                sort_student(&root);
                 write_student(file, student);
             } break;
                 
@@ -651,7 +665,12 @@ int main(int argc, const char * argv[]) {
             case 0: {
                 Student* lastStudent = root;
                 fclose(file);
-                file = fopen(filename, "a+");
+                
+                // truncate the file to zero size
+                int ff2 = open(filename, O_TRUNC | O_WRONLY);
+                close(ff2);
+                
+                file = fopen(filename, "w+");
                 if(file == NULL){
                     printf("Error: cant open file %s\n", filename);
                     exit(-1);
